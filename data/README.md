@@ -1,0 +1,1 @@
+`synthetic_demo.csv` is a fictional software-test fixture. Names and clauses are invented. Do not cite it as factual data or report its scores as real-world research findings. Replace it with a properly sourced, independently annotated corpus before substantive research.

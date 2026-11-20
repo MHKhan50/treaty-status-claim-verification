@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "warheadverify-agentbench"
+version = "0.2.0"
+description = "CPU-first evidence verification benchmark for public nuclear arms-control claims"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.23,<3", "pandas>=1.5,<3", "scikit-learn>=1.2,<2", "joblib>=1.2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.4"]
+
+[project.scripts]
+warheadverify = "warheadverify.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100

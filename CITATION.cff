@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "WarheadVerify-AgentBench"
+version: 0.2.0
+date-released: 2026-11-20
+type: software
+abstract: "A CPU-first benchmark for retrieval-assisted verification of public nuclear arms-control claims."

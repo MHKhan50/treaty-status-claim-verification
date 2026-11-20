@@ -1,0 +1,27 @@
+{
+  "documents": 788,
+  "claims": 4964,
+  "countries": 197,
+  "labels": {
+    "insufficient_evidence": 1822,
+    "supported": 1593,
+    "contradicted": 1549
+  },
+  "kinds": {
+    "status": 2393,
+    "future": 999,
+    "event": 749,
+    "day_precision": 587,
+    "uncovered_treaty": 236
+  },
+  "split_country": {
+    "train": 3452,
+    "test": 785,
+    "val": 727
+  },
+  "split_treaty": {
+    "train": 3229,
+    "test": 1182,
+    "val": 553
+  }
+}

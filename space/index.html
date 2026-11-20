@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nuclear Treaty Claim Check</title>
+<meta name="description" content="Check a claim about nuclear arms-control treaties against the UN treaty record, by voice or text, in English, Urdu or Turkish.">
+<style>
+:root{--blue:#1F4E9C;--yellow:#E3A800;--red:#C8102E;--green:#5FA65A;--ink:#14213d;--muted:#5b6475;--line:#dfe3ea;--bg:#f6f7fa;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Nastaliq Urdu",sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--ink);color:#fff;padding:22px 20px 18px}
+header .wrap{max-width:1100px;margin:0 auto}
+h1{margin:0;font-size:1.5rem;letter-spacing:.2px}
+header p{margin:6px 0 0;color:#c9d1e3;font-size:.95rem}
+main{max-width:1100px;margin:0 auto;padding:18px 20px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.ask{display:flex;gap:8px;flex-wrap:wrap}
+.ask textarea{flex:1 1 420px;min-height:64px;font:inherit;font-size:1rem;padding:10px 12px;border:1px solid var(--line);border-radius:8px;resize:vertical}
+.ask .btns{display:flex;flex-direction:column;gap:8px}
+button,select{font:inherit;border-radius:8px;border:1px solid var(--line);background:#fff;padding:8px 12px;cursor:pointer}
+button.primary{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+button.mic.on{background:var(--red);color:#fff;border-color:var(--red)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.examples{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.examples button{font-size:.85rem;padding:4px 10px;border-radius:999px;background:var(--bg)}
+.status{font-size:.85rem;color:var(--muted);margin-top:8px}
+.result{border-left:6px solid var(--line);padding:10px 14px;margin:10px 0;background:#fbfcfe;border-radius:6px}
+.result.supported{border-left-color:var(--blue)}
+.result.contradicted{border-left-color:var(--red)}
+.result.unknown{border-left-color:var(--yellow)}
+.result .claim{color:var(--muted);font-size:.9rem;margin-bottom:4px}
+.result .verdict{font-weight:700;font-size:1.15rem}
+.result .why{margin-top:4px}
+.result .hist{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;font-size:.8rem}
+.chip{padding:2px 8px;border-radius:999px;color:#fff}
+.chip.Approved{background:var(--blue)}.chip.Signed{background:var(--yellow);color:#14213d}.chip.Not{background:var(--red)}.chip.Withdrawn{background:var(--green)}
+.result .src{margin-top:6px;font-size:.8rem;color:var(--muted)}
+.result .src a{color:var(--blue)}
+.maphead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=range]{width:260px}
+#map{width:100%;height:auto;display:block;margin-top:10px;background:#eef2f8;border-radius:8px}
+#map path{stroke:#fff;stroke-width:.5}
+#map path:hover{stroke:var(--ink);stroke-width:1.2;cursor:pointer}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;padding:6px 9px;border-radius:6px;font-size:.8rem;display:none;z-index:5}
+.note{font-size:.82rem;color:var(--muted);line-height:1.5}
+.note a{color:var(--blue)}
+[dir=rtl]{text-align:right}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Nuclear Treaty Claim Check</h1>
+  <p>Say or type a claim about the NPT, CTBT, Partial Test-Ban Treaty or TPNW. Every answer is checked against the UN treaty record and shows its source.</p>
+</div></header>
+<main>
+  <section class="card">
+    <div class="ask">
+      <textarea id="q" placeholder="e.g. Pakistan has signed the CTBT. / Kya Iran NPT ka rukan hai? / Türkiye TPNW'yi imzaladı mı?" aria-label="Claim or question"></textarea>
+      <div class="btns">
+        <button class="primary" id="check" disabled>Check</button>
+        <button class="mic" id="mic" title="Speak your claim">🎤 Speak</button>
+        <select id="lang" aria-label="Voice language">
+          <option value="en-GB">English</option>
+          <option value="ur-PK">اردو</option>
+          <option value="tr-TR">Türkçe</option>
+        </select>
+      </div>
+    </div>
+    <div class="examples" id="examples"></div>
+    <div class="status" id="status">Loading the treaty record…</div>
+    <div id="results"></div>
+  </section>
+
+  <section class="card">
+    <div class="maphead">
+      <strong id="maptitle">Who has joined?</strong>
+      <div class="controls">
+        <select id="treaty" aria-label="Treaty"></select>
+        <button id="play" title="Play the timeline">▶</button>
+        <input type="range" id="year" min="1963" max="2025" value="2025" aria-label="Year">
+        <strong id="yearlabel">2025</strong>
+      </div>
+    </div>
+    <svg id="map" viewBox="0 0 960 470" role="img" aria-label="World map of treaty status"></svg>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="card note">
+    <p><strong>How it works.</strong> The app reads the country, the treaty and what is claimed (signed, ratified or joined, withdrew, and whether it is negated) from your sentence, then looks up that country's year-by-year status. The decision is made by the record, not by a language model, so every verdict can be traced to a source. Paste a paragraph and each sentence that names a country and a treaty is checked separately.</p>
+    <p><strong>Data.</strong> UNODA Treaties Database as published by <a href="https://ourworldindata.org/" target="_blank" rel="noopener">Our World in Data</a> (CC BY 4.0), downloaded live when this page opens. Statuses are yearly: <em>Approved</em> means ratified, accepted, approved or acceded. Check the <a href="https://treaties.unoda.org/" target="_blank" rel="noopener">UNODA Treaties Database</a> for exact dates. Map: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>.</p>
+    <p><strong>Limits.</strong> Four treaties only; yearly, not daily, status; sentences that do not name a country and one of the four treaties are not checked. Research tool, not legal advice.</p>
+    <p>Code and paper: <a href="https://github.com/MHKhan50/warheadverify-agentbench" target="_blank" rel="noopener">github.com/MHKhan50/warheadverify-agentbench</a></p>
+  </section>
+</main>
+<div id="tip"></div>
+
+<script id="core">
+/* ---------- core: data, parsing and verdicts (no DOM) ---------- */
+const TREATIES = {
+  NPT:  {slug: "nuclear-non-proliferation-treaty", name: "Treaty on the Non-Proliferation of Nuclear Weapons", opened: 1968},
+  CTBT: {slug: "comprehensive-nuclear-test-ban-treaty", name: "Comprehensive Nuclear-Test-Ban Treaty", opened: 1996},
+  PTBT: {slug: "partial-nuclear-test-ban-treaty", name: "Partial Nuclear Test-Ban Treaty", opened: 1963},
+  TPNW: {slug: "prohibition-of-nuclear-weapons", name: "Treaty on the Prohibition of Nuclear Weapons", opened: 2017},
+};
+const STATUSES = ["Not signed", "Signed", "Approved", "Withdrawn"];
+const owidUrl = slug => `https://ourworldindata.org/grapher/${slug}.csv?v=1&csvType=full&useColumnShortNames=false`;
+const chartUrl = slug => `https://ourworldindata.org/grapher/${slug}`;
+
+function parseCSV(text) {
+  const rows = []; let row = [], field = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; } else field += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(field); rows.push(row); row = []; field = ""; }
+    else field += c;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1);
+}
+
+/* panel[treaty][country] = {code, years: {year: status}} */
+function buildPanel(csvByTreaty) {
+  const panel = {};
+  for (const [t, text] of Object.entries(csvByTreaty)) {
+    const rows = parseCSV(text), head = rows[0];
+    const iE = head.indexOf("Entity"), iC = head.indexOf("Code"), iY = head.indexOf("Year");
+    const iS = head.findIndex((h, i) => i !== iE && i !== iC && i !== iY);
+    panel[t] = {};
+    for (const r of rows.slice(1)) {
+      const code = r[iC], status = r[iS];
+      if (!code || code.startsWith("OWID") || !STATUSES.includes(status)) continue;
+      const c = (panel[t][r[iE]] ||= {code, years: {}});
+      c.years[+r[iY]] = status;
+    }
+  }
+  return panel;
+}
+
+function lastYear(panel, t) {
+  let m = 0; for (const c of Object.values(panel[t])) for (const y in c.years) m = Math.max(m, +y); return m;
+}
+function statusAt(entry, year) {
+  let best = null, by = -1;
+  for (const y in entry.years) if (+y <= year && +y > by) { by = +y; best = entry.years[y]; }
+  return best;
+}
+function spans(entry) {
+  const ys = Object.keys(entry.years).map(Number).sort((a, b) => a - b), out = [];
+  for (const y of ys) { const s = entry.years[y]; const last = out[out.length - 1];
+    if (last && last.status === s) last.to = y; else out.push({status: s, from: y, to: y}); }
+  return out;
+}
+function firstYear(entry, status) {
+  const sp = spans(entry).find(s => s.status === status); return sp ? sp.from : null;
+}
+
+/* ---------- language ---------- */
+const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ı/g, "i").replace(/İ/g, "i").toLowerCase();
+
+const COUNTRY_ALIASES = {
+  "United States": ["usa", "u.s.", "u.s.a.", "us", "america", "united states of america", "amerika", "abd", "amerika birlesik devletleri", "امریکہ", "امریکا", "ریاستہائے متحدہ"],
+  "United Kingdom": ["uk", "u.k.", "britain", "great britain", "england", "ingiltere", "birlesik krallik", "برطانیہ", "انگلینڈ"],
+  "Russia": ["russian federation", "rusya", "روس", "soviet union", "ussr"],
+  "North Korea": ["dprk", "democratic people's republic of korea", "kuzey kore", "شمالی کوریا"],
+  "South Korea": ["republic of korea", "guney kore", "جنوبی کوریا"],
+  "India": ["hindistan", "bharat", "بھارت", "ہندوستان", "انڈیا"],
+  "Pakistan": ["پاکستان"],
+  "China": ["prc", "people's republic of china", "cin", "چین"],
+  "France": ["fransa", "فرانس"],
+  "Iran": ["islamic republic of iran", "ایران"],
+  "Israel": ["israil", "اسرائیل"],
+  "Saudi Arabia": ["suudi arabistan", "سعودی عرب"],
+  "Turkey": ["turkiye", "türkiye", "ترکی", "ترکیہ"],
+  "Afghanistan": ["afganistan", "افغانستان"],
+  "Bangladesh": ["banglades", "بنگلہ دیش"],
+  "Japan": ["japonya", "جاپان"],
+  "Germany": ["almanya", "جرمنی"],
+  "Egypt": ["misir", "مصر"],
+  "Iraq": ["irak", "عراق"],
+  "Syria": ["suriye", "شام"],
+  "Qatar": ["katar", "قطر"],
+  "United Arab Emirates": ["uae", "birlesik arap emirlikleri", "متحدہ عرب امارات"],
+  "Malaysia": ["malezya", "ملائیشیا"],
+  "Indonesia": ["endonezya", "انڈونیشیا"],
+  "Azerbaijan": ["azerbaycan", "آذربائیجان"],
+  "Kazakhstan": ["kazakistan", "قازقستان"],
+  "Uzbekistan": ["ozbekistan", "ازبکستان"],
+  "Turkmenistan": ["ترکمانستان"],
+  "Kyrgyzstan": ["kirgizistan", "کرغزستان"],
+  "Tajikistan": ["tacikistan", "تاجکستان"],
+  "Ukraine": ["ukrayna", "یوکرین"],
+  "Italy": ["italya", "اٹلی"],
+  "Spain": ["ispanya", "اسپین", "سپین"],
+  "Canada": ["kanada", "کینیڈا"],
+  "Brazil": ["brezilya", "برازیل"],
+  "South Africa": ["guney afrika", "جنوبی افریقہ"],
+  "New Zealand": ["yeni zelanda", "نیوزی لینڈ"],
+  "Australia": ["avustralya", "آسٹریلیا"],
+  "Sri Lanka": ["سری لنکا"],
+  "Nepal": ["نیپال"],
+  "Libya": ["لیبیا"],
+  "Kuwait": ["kuveyt", "کویت"],
+  "Jordan": ["urdun", "اردن"],
+  "Lebanon": ["lubnan", "لبنان"],
+  "Oman": ["umman", "عمان"],
+  "Yemen": ["یمن"],
+  "Sudan": ["سوڈان"],
+  "Nigeria": ["nijerya", "نائجیریا"],
+  "Mexico": ["meksika", "میکسیکو"],
+  "Ireland": ["irlanda", "آئرلینڈ"],
+  "Austria": ["avusturya", "آسٹریا"],
+  "Norway": ["norvec", "ناروے"],
+  "Sweden": ["isvec", "سویڈن"],
+  "Cuba": ["kuba", "کیوبا"],
+  "Vietnam": ["viet nam", "ویتنام"],
+  "Myanmar": ["burma", "میانمار"],
+  "Netherlands": ["holland", "hollanda", "ہالینڈ", "نیدرلینڈز"],
+  "Greece": ["yunanistan", "یونان"],
+  "Algeria": ["cezayir", "الجزائر"],
+  "Morocco": ["fas", "مراکش"],
+  "Palestine": ["state of palestine", "filistin", "فلسطین"],
+};
+
+const TREATY_ALIASES = {
+  NPT: ["npt", "non-proliferation", "nonproliferation", "non proliferation", "nukleer silahlarin yayilmasinin onlenmesi", "این پی ٹی", "عدم پھیلاؤ"],
+  CTBT: ["ctbt", "comprehensive test ban", "comprehensive test-ban", "comprehensive nuclear test ban", "comprehensive nuclear-test-ban", "kapsamli nukleer deneme yasagi", "سی ٹی بی ٹی"],
+  PTBT: ["ptbt", "ltbt", "partial test ban", "partial test-ban", "partial nuclear test ban", "partial nuclear test-ban", "limited test ban", "limited test-ban", "kismi nukleer deneme yasagi", "kismi deneme yasagi", "جزوی تجربات پر پابندی"],
+  TPNW: ["tpnw", "prohibition of nuclear weapons", "nuclear ban treaty", "ban treaty", "nukleer silahlarin yasaklanmasi", "جوہری ہتھیاروں کی ممانعت", "ٹی پی این ڈبلیو"],
+};
+
+const ACT = {
+  withdraw: ["withdrew", "withdrawn", "withdraw", "pulled out", "left the", "exited", "has left", "nikal", "nikla", "nikli", "نکل", "دستبردار", "cekildi", "cekilmis", "cekilmedi", "ayrildi"],
+  ratify: ["ratified", "ratify", "ratification", "ratifies", "acceded", "accede", "accession", "party to", "a party", "member", "joined", "join", "rukan", "rukn", "member hai", "shamil", "tausiq", "توثیق", "رکن", "شامل", "onayladi", "onaylamis", "onaylamadi", "onaylamamis", "taraf", "katildi", "katilmis", "katilmadi", "katilmamis", "uye"],
+  sign: ["signed", "sign", "signatory", "signs", "dastakhat", "دستخط", "imzaladi", "imzalamis", "imzalamadi", "imzalamamis", "imzaci"],
+};
+const NEG = [/\bnot\b/, /n't\b/, /\bnever\b/, /\bno longer\b/, /\bnahi\b/, /\bnahin\b/, /\bnahee\b/, /نہیں/, /(^|\s)نہ(\s|$)/, /\bdegil\b/,
+             /imzalama(di|mis)/, /onaylama(di|mis)/, /katilma(di|mis)/, /cekilme(di|mis)/];
+const QUESTION = [/\?\s*$/, /^\s*(has|have|did|does|is|are|was|were|kya)\b/, /\b(mi|mu|mı|mü)\s*\??\s*$/, /^\s*کیا/, /؟\s*$/];
+
+function findIn(text, alias) {
+  const a = fold(alias), t = fold(text);
+  if (/[؀-ۿ]/.test(alias)) return text.includes(alias) ? text.indexOf(alias) : -1;
+  const short = a.length <= 3;
+  const re = new RegExp("(^|[^a-z0-9])" + a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + (short ? "(?![a-z0-9])" : ""), "i");
+  const m = re.exec(t);
+  return m ? m.index + m[1].length : -1;
+}
+
+function countryIndex(panelCountries) {
+  const idx = [];
+  for (const name of panelCountries) idx.push([name, name]);
+  const byFold = new Map([...panelCountries].map(n => [fold(n), n]));
+  for (const [name, list] of Object.entries(COUNTRY_ALIASES)) {
+    const target = [name, ...list].map(a => byFold.get(fold(a))).find(Boolean);
+    if (target) for (const a of [name, ...list]) idx.push([a, target]);
+  }
+  return idx.sort((x, y) => y[0].length - x[0].length);
+}
+
+function parseClaim(text, cIndex) {
+  let country = null, cpos = 1e9;
+  for (const [alias, name] of cIndex) {
+    const p = findIn(text, alias);
+    if (p >= 0 && (p < cpos || (p === cpos && alias.length > (country?.alias.length || 0)))) { country = {name, alias}; cpos = p; }
+  }
+  let treaty = null;
+  for (const [t, list] of Object.entries(TREATY_ALIASES)) {
+    for (const a of list) if (findIn(text, a) >= 0) { treaty = t; break; }
+    if (treaty) break;
+  }
+  const f = fold(text);
+  let act = "status";
+  for (const k of ["withdraw", "ratify", "sign"]) if (ACT[k].some(w => (/[؀-ۿ]/.test(w) ? text.includes(w) : f.includes(fold(w))))) { act = k; break; }
+  const negated = NEG.some(r => r.test(f) || r.test(text));
+  const ym = text.match(/\b(19[4-9]\d|20[0-4]\d)\b/);
+  const question = QUESTION.some(r => r.test(f) || r.test(text));
+  const lang = /[؀-ۿ]/.test(text) ? "ur" : (/(imza|onay|cekil|katil|mi\b|mı|antlasma|türkiye|turkiye)/.test(f) ? "tr" : "en");
+  return {country: country && country.name, treaty, act, negated, year: ym ? +ym[1] : null, question, lang};
+}
+
+function verdict(claim, panel) {
+  if (!claim.treaty || !claim.country) return {label: "unknown", reason: !claim.treaty ? "no-treaty" : "no-country"};
+  const entry = panel[claim.treaty][claim.country];
+  if (!entry) return {label: "unknown", reason: "not-in-record"};
+  const ly = lastYear(panel, claim.treaty);
+  const year = claim.year ? Math.min(claim.year, ly) : ly;
+  if (claim.year && claim.year < TREATIES[claim.treaty].opened) return {label: "unknown", reason: "before-treaty", year: claim.year};
+  const s = statusAt(entry, year);
+  if (!s) return {label: "unknown", reason: "not-in-record"};
+  let truth;
+  if (claim.act === "sign") truth = s === "Signed" || s === "Approved" || s === "Withdrawn";
+  else if (claim.act === "ratify") truth = s === "Approved";
+  else if (claim.act === "withdraw") truth = s === "Withdrawn";
+  else return {label: "info", status: s, year, entry};
+  if (claim.negated) truth = !truth;
+  return {label: truth ? "supported" : "contradicted", status: s, year, entry};
+}
+
+function splitSentences(text) {
+  return text.split(/(?<=[.!?؟۔])\s+|\n+/).map(s => s.trim()).filter(Boolean);
+}
+
+if (typeof module !== "undefined") module.exports = {buildPanel, parseCSV, countryIndex, parseClaim, verdict, splitSentences, spans, firstYear, statusAt, lastYear, TREATIES};
+</script>
+
+<script>
+/* ---------- UI ---------- */
+const COLORS = {"Approved": "#1F4E9C", "Signed": "#E3A800", "Not signed": "#C8102E", "Withdrawn": "#5FA65A"};
+const STATUS_TEXT = {
+  en: {"Approved": "ratified or acceded", "Signed": "signed, not ratified", "Not signed": "not signed", "Withdrawn": "withdrawn"},
+  ur: {"Approved": "توثیق یا شمولیت", "Signed": "دستخط، توثیق نہیں", "Not signed": "دستخط نہیں", "Withdrawn": "دستبردار"},
+  tr: {"Approved": "onayladı veya katıldı", "Signed": "imzaladı, onaylamadı", "Not signed": "imzalamadı", "Withdrawn": "çekildi"},
+};
+const WORDS = {
+  en: {supported: "Supported by the record", contradicted: "Contradicted by the record", yes: "Yes", no: "No", info: "Status in the record", unknown: "Cannot check"},
+  ur: {supported: "ریکارڈ سے درست", contradicted: "ریکارڈ کے مطابق غلط", yes: "ہاں", no: "نہیں", info: "ریکارڈ میں حیثیت", unknown: "جانچ ممکن نہیں"},
+  tr: {supported: "Kayıtla doğrulandı", contradicted: "Kayıtla çelişiyor", yes: "Evet", no: "Hayır", info: "Kayıttaki durum", unknown: "Kontrol edilemiyor"},
+};
+const REASONS = {
+  "no-treaty": "Name one of the four treaties: NPT, CTBT, Partial Test-Ban Treaty (PTBT) or TPNW.",
+  "no-country": "Name a country.",
+  "not-in-record": "This country has no entry for this treaty in the UN record.",
+  "before-treaty": "The treaty did not exist yet in that year.",
+};
+const EXAMPLES = ["Pakistan has signed the CTBT.", "North Korea withdrew from the NPT.", "India is a party to the NPT.",
+  "Has the United States ratified the CTBT?", "Kya Iran NPT ka rukan hai?", "Türkiye TPNW'yi imzaladı mı?", "پاکستان نے این پی ٹی پر دستخط نہیں کیے۔"];
+
+let PANEL = null, CINDEX = null, WORLD = null, TREATY = "NPT";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+async function loadData() {
+  const texts = {};
+  await Promise.all(Object.entries(TREATIES).map(async ([t, info]) => {
+    const r = await fetch(owidUrl(info.slug));
+    if (!r.ok) throw new Error(t + ": HTTP " + r.status);
+    texts[t] = await r.text();
+  }));
+  PANEL = buildPanel(texts);
+  const names = new Set(); for (const t in PANEL) for (const c in PANEL[t]) names.add(c);
+  CINDEX = countryIndex(names);
+  const n = Object.keys(PANEL.NPT).length;
+  $("status").textContent = `Treaty record loaded live: ${names.size} countries, four treaties, years up to ${lastYear(PANEL, "NPT")} (fetched ${new Date().toLocaleString()}).`;
+  $("check").disabled = false;
+}
+
+function renderResult(sentence, c, v) {
+  const L = WORDS[c.lang];
+  let head, cls = v.label;
+  if (v.label === "unknown") head = L.unknown;
+  else if (v.label === "info") { head = L.info; cls = "unknown"; }
+  else head = c.question ? (v.label === "supported" ? L.yes : L.no) + " — " + L[v.label] : L[v.label];
+  let why = "";
+  if (v.label === "unknown") why = REASONS[v.reason] || "";
+  else {
+    const e = v.entry, t = c.treaty;
+    const signed = firstYear(e, "Signed"), approved = firstYear(e, "Approved"), withdrawn = firstYear(e, "Withdrawn");
+    const parts = [`In ${v.year}, ${esc(c.country)}: <strong>${STATUS_TEXT.en[v.status]}</strong> (${esc(TREATIES[t].name)}).`];
+    if (signed) parts.push(`Signed status first recorded ${signed}.`);
+    if (approved) parts.push(`Ratified or acceded first recorded ${approved}.`);
+    if (withdrawn) parts.push(`Withdrawal recorded ${withdrawn}.`);
+    if (c.act === "sign" && v.status === "Approved" && !signed) parts.push("A country that acceded without signing first counts as having joined.");
+    why = parts.join(" ");
+  }
+  const hist = v.entry ? spans(v.entry).map(s => `<span class="chip ${s.status.split(" ")[0]}">${s.from === s.to ? s.from : s.from + "–" + s.to}: ${esc(STATUS_TEXT.en[s.status])}</span>`).join("") : "";
+  const src = c.treaty ? `Source: UNODA Treaties Database via <a href="${chartUrl(TREATIES[c.treaty].slug)}" target="_blank" rel="noopener">Our World in Data</a> · <a href="https://treaties.unoda.org/" target="_blank" rel="noopener">UNODA</a>` : "";
+  const dir = c.lang === "ur" ? ' dir="rtl"' : "";
+  return `<div class="result ${cls}"><div class="claim"${dir}>${esc(sentence)}</div><div class="verdict"${dir}>${head}</div><div class="why">${why}</div>${hist ? `<div class="hist">${hist}</div>` : ""}<div class="src">${src}</div></div>`;
+}
+
+function check() {
+  const text = $("q").value.trim(); if (!text || !PANEL) return;
+  const sentences = splitSentences(text);
+  const html = [];
+  for (const s of sentences) {
+    const c = parseClaim(s, CINDEX);
+    if (sentences.length > 1 && (!c.country || !c.treaty)) continue;
+    const v = verdict(c, PANEL);
+    html.push(renderResult(s, c, v));
+    if (c.treaty && c.treaty !== TREATY) { TREATY = c.treaty; $("treaty").value = c.treaty; }
+  }
+  $("results").innerHTML = html.join("") || renderResult(text, parseClaim(text, CINDEX), {label: "unknown", reason: "no-treaty"});
+  drawMap();
+}
+
+/* voice */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+$("mic").onclick = () => {
+  if (!SR) { $("status").textContent = "Voice input needs a browser with speech recognition (Chrome, Edge or Safari)."; return; }
+  if (rec) { rec.stop(); return; }
+  rec = new SR(); rec.lang = $("lang").value; rec.interimResults = true;
+  $("mic").classList.add("on"); $("mic").textContent = "■ Stop";
+  rec.onresult = e => { $("q").value = Array.from(e.results).map(r => r[0].transcript).join(" "); };
+  rec.onend = () => { $("mic").classList.remove("on"); $("mic").textContent = "🎤 Speak"; rec = null; check(); };
+  rec.onerror = e => { $("status").textContent = "Voice error: " + e.error; };
+  rec.start();
+};
+
+/* map */
+async function loadMap() {
+  const [world, geo, tj] = await Promise.all([
+    fetch("https://cdn.jsdelivr.net/npm/visionscarto-world-atlas@1/world/110m.json").then(r => r.json()),
+    import("https://cdn.jsdelivr.net/npm/d3-geo@3/+esm"),
+    import("https://cdn.jsdelivr.net/npm/topojson-client@3/+esm"),
+  ]);
+  window.d3geo = geo;
+  WORLD = tj.feature(world, world.objects.countries).features;
+}
+function codeMap(t, year) {
+  const m = {}; for (const [name, e] of Object.entries(PANEL[t])) m[e.code] = {name, status: statusAt(e, year)}; return m;
+}
+function drawMap() {
+  if (!WORLD || !PANEL) return;
+  const year = +$("year").value, t = TREATY, m = codeMap(t, year);
+  const proj = d3geo.geoNaturalEarth1().fitSize([960, 470], {type: "Sphere"}), path = d3geo.geoPath(proj);
+  const counts = {};
+  $("map").innerHTML = WORLD.filter(f => f.properties.a3 !== "ATA").map(f => {
+    const a3 = f.properties.a3, d = m[a3], s = d && d.status;
+    if (s) counts[s] = (counts[s] || 0) + 1;
+    return `<path d="${path(f)}" fill="${s ? COLORS[s] : "#d5dae3"}" data-n="${esc(d ? d.name : f.properties.name || a3)}" data-s="${esc(s || "no record")}"></path>`;
+  }).join("");
+  $("maptitle").textContent = `${t}: status in ${year}`;
+  $("yearlabel").textContent = year;
+  $("legend").innerHTML = STATUSES_ORDER.map(s => `<span><i style="background:${COLORS[s]}"></i>${STATUS_TEXT.en[s]} (${counts[s] || 0})</span>`).join("") + `<span><i style="background:#d5dae3"></i>no record</span>`;
+}
+const STATUSES_ORDER = ["Approved", "Signed", "Not signed", "Withdrawn"];
+$("map").addEventListener("mousemove", e => {
+  const p = e.target.closest("path"), tip = $("tip");
+  if (!p) { tip.style.display = "none"; return; }
+  tip.innerHTML = `${p.dataset.n}<br>${STATUS_TEXT.en[p.dataset.s] || p.dataset.s}`;
+  tip.style.display = "block"; tip.style.left = e.clientX + 12 + "px"; tip.style.top = e.clientY + 12 + "px";
+});
+$("map").addEventListener("mouseleave", () => ($("tip").style.display = "none"));
+$("map").addEventListener("click", e => {
+  const p = e.target.closest("path"); if (!p || p.dataset.s === "no record") return;
+  $("q").value = `Has ${p.dataset.n} ratified the ${TREATY}?`; check();
+});
+
+function setupControls() {
+  $("treaty").innerHTML = Object.keys(TREATIES).map(t => `<option value="${t}">${t} — ${TREATIES[t].name}</option>`).join("");
+  $("treaty").onchange = e => { TREATY = e.target.value; const ly = lastYear(PANEL, TREATY); $("year").min = TREATIES[TREATY].opened; $("year").max = ly; $("year").value = ly; drawMap(); };
+  $("year").oninput = drawMap;
+  let timer = null;
+  $("play").onclick = () => {
+    if (timer) { clearInterval(timer); timer = null; $("play").textContent = "▶"; return; }
+    $("play").textContent = "❚❚"; $("year").value = $("year").min;
+    timer = setInterval(() => { const y = +$("year").value + 1; if (y > +$("year").max) { clearInterval(timer); timer = null; $("play").textContent = "▶"; return; } $("year").value = y; drawMap(); }, 180);
+  };
+  $("check").onclick = check;
+  $("q").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); check(); } });
+  $("examples").innerHTML = EXAMPLES.map(x => `<button>${esc(x)}</button>`).join("");
+  $("examples").onclick = e => { if (e.target.tagName === "BUTTON") { $("q").value = e.target.textContent; check(); } };
+}
+
+(async () => {
+  try { await loadData(); }
+  catch (err) { $("status").textContent = "Could not load the treaty record from Our World in Data (" + err.message + "). Please reload the page."; return; }
+  setupControls();
+  const ly = lastYear(PANEL, TREATY); $("year").min = TREATIES[TREATY].opened; $("year").max = ly; $("year").value = ly; $("yearlabel").textContent = ly;
+  try { await loadMap(); drawMap(); } catch (err) { $("map").outerHTML = `<p class="note">The map could not be loaded (${esc(err.message)}); checking claims still works.</p>`; }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "source": "UNODA Treaties Database via Our World in Data (CC BY 4.0)",
+  "files": {
+    "PTBT": {
+      "url": "https://ourworldindata.org/grapher/partial-nuclear-test-ban-treaty.csv?v=1&csvType=full&useColumnShortNames=false",
+      "sha256": "dbccf468914dacbf5cc483985efd7763bad976096b215399cc79c204bdb8384b",
+      "rows": 12411,
+      "retrieved_utc": "2026-11-20T20:00:18+00:00"
+    },
+    "NPT": {
+      "url": "https://ourworldindata.org/grapher/nuclear-non-proliferation-treaty.csv?v=1&csvType=full&useColumnShortNames=false",
+      "sha256": "3cc33beffc6a6148eb59407251e7e699ba4f24b0a45d821e35c31b46358ee188",
+      "rows": 11426,
+      "retrieved_utc": "2026-11-20T20:00:18+00:00"
+    },
+    "CTBT": {
+      "url": "https://ourworldindata.org/grapher/comprehensive-nuclear-test-ban-treaty.csv?v=1&csvType=full&useColumnShortNames=false",
+      "sha256": "a3f8e3b910db61600fe3f2980b6f7f6cffeb19b4a241a89df646b7855924aa68",
+      "rows": 5910,
+      "retrieved_utc": "2026-11-20T20:00:18+00:00"
+    },
+    "TPNW": {
+      "url": "https://ourworldindata.org/grapher/prohibition-of-nuclear-weapons.csv?v=1&csvType=full&useColumnShortNames=false",
+      "sha256": "b7dd161113997c0d42f4055622cf002019fc5f3fbe6862b13a4bc9ba94b26593",
+      "rows": 1773,
+      "retrieved_utc": "2026-11-20T20:00:18+00:00"
+    }
+  }
+}

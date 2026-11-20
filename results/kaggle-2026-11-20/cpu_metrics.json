@@ -1,0 +1,27 @@
+{
+  "retrieval_tfidf": {
+    "recall@1": 0.8384094754653131,
+    "recall@3": 0.9767343485617598,
+    "recall@5": 0.9978849407783418,
+    "mrr": 0.9063522278623802,
+    "n": 4728
+  },
+  "country": {
+    "majority": 0.18074899411946765,
+    "claim_lr": 0.732525051209655,
+    "pair_lr": 0.7245897921298483,
+    "pair_mlp": 0.828448258513886,
+    "pair_lr_gold": 0.7219407013556296,
+    "lookup_agent": 1.0,
+    "by_kind_lookup_acc": null
+  },
+  "treaty": {
+    "majority": 0.1660313426514189,
+    "claim_lr": 0.583395162415045,
+    "pair_lr": 0.5870025457669161,
+    "pair_mlp": 0.623380826940846,
+    "pair_lr_gold": 0.5699818153419075,
+    "lookup_agent": 1.0,
+    "by_kind_lookup_acc": null
+  }
+}

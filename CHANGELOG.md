@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0 — 2026-11-20
+
+- App: **Nuclear Treaty Claim Check**, a static Hugging Face Space (`space/`): voice or text claims in English, Urdu or Turkish, verdicts from the live treaty record with year-by-year status and source, paragraph checking, and a world map with a timeline; parser and verdict tests in `space/test_core.mjs`; upload script `scripts/upload_space.py`.
+- Results of the v0.3.0 Kaggle run in `results/kaggle-2026-11-20/` and in the README.
+
 ## 0.3.0 — 2026-11-20
 
 - Real evidence corpus: yearly treaty-status records for PTBT, NPT, CTBT and TPNW (UNODA via Our World in Data),

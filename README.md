@@ -2,7 +2,7 @@
 
 **Verifying public nuclear arms-control claims against treaty-status records: lexical baselines, a fine-tuned cross-encoder, zero-shot NLI and a multi-agent LLM pipeline with provenance checks and abstention.**
 
-Version `0.3.0` · Python `3.10+`
+Version `0.4.0` · Python `3.10+`
 
 > **Scope.** Public treaty participation only (signature, ratification, accession, withdrawal). No information on weapons, materials, delivery, deployment or targeting. Labels describe whether the published records support a claim; they are not legal opinions or compliance findings.
 
@@ -34,9 +34,32 @@ Given a claim such as *"By 2005, Brazil had ratified or acceded to the Comprehen
 
 Metrics: macro-F1 with 95% intervals from 1,000 country-level bootstrap resamples, balanced accuracy, per-class F1, accuracy by claim type, risk–coverage of the cross-encoder, Recall@k and MRR for TF-IDF and e5-small retrieval, audit counts and the agreement rule's coverage and accuracy.
 
-## Results
+## App: Nuclear Treaty Claim Check
 
-Results will be added from the Kaggle run (`notebooks/kaggle_warheadverify.ipynb`).
+[**Open the app**](https://huggingface.co/spaces/MHkhan50/nuclear-treaty-claim-check): say or type a claim in English, Urdu or Turkish, for example *"Pakistan has signed the CTBT"* or *"Kya Iran NPT ka rukan hai?"*, and get a verdict from the treaty record with the year-by-year status, the source and a world map with a timeline from 1963. Paste a paragraph and every sentence that names a country and a treaty is checked.
+
+The app follows the design this benchmark supports: language understanding only extracts *which country, which treaty, which action*; the verdict comes from the record. It runs in the browser (`space/index.html`), downloads the record live from Our World in Data, and needs no server. Parser and verdict tests: `node space/test_core.mjs`.
+
+## Results (v0.3.0 Kaggle run, 20 November 2026)
+
+Macro-F1 on the test sets with 95% country-level bootstrap intervals. Corpus: 788 evidence documents, 4,964 claims, 197 countries. Full outputs: `results/kaggle-2026-11-20/`.
+
+| Verifier | Country-held-out test | Treaty-held-out test (TPNW) |
+|---|---|---|
+| Majority class | 0.181 [0.169, 0.191] | 0.166 [0.156, 0.176] |
+| Claim only, TF-IDF LR | 0.733 [0.700, 0.766] | 0.583 [0.558, 0.610] |
+| Claim + retrieved record, TF-IDF LR | 0.725 [0.691, 0.759] | 0.587 [0.566, 0.611] |
+| Claim + retrieved record, TF-IDF MLP | 0.828 [0.788, 0.867] | 0.623 [0.596, 0.651] |
+| Claim + gold record, TF-IDF LR | 0.722 [0.690, 0.756] | 0.570 [0.543, 0.599] |
+| Cross-encoder (DeBERTa-v3-small), 3 seeds, mean ± SD | 0.910 ± 0.004 | 0.836 ± 0.139 |
+| Zero-shot NLI (DeBERTa-v3-small) | 0.413 [0.372, 0.451] | 0.466 [0.440, 0.491] |
+| Lookup agent (parser + record check) | 1.000 | 1.000 |
+
+Retrieval Recall@1: TF-IDF 0.838, e5-small 0.944.
+
+Agent pipeline on 600 country-held-out test claims: the LLM verifier (Qwen2.5-1.5B-Instruct) scores 0.400 [0.351, 0.449]; after the provenance audit 0.167, because 548 of 600 answers cited a record that was not retrieved or did not match. The cross-encoder scores 0.907 on the same claims; requiring the LLM and the cross-encoder to agree keeps 33% of claims at accuracy 1.000.
+
+Reading these numbers: claims are generated from templates, so the lookup agent's 1.000 shows that a parser plus the record solves this version of the task, not that the problem is solved; the treaty-held-out cross-encoder varies strongly across seeds (SD 0.139). Version 1.0 adds real-world claims and larger models.
 
 ## Run
 

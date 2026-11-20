@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below, and cite the UNODA Treaties Database and Our World in Data."
 title: "WarheadVerify-AgentBench: verification of public nuclear arms-control treaty-status claims"
-version: 0.3.0
+version: 0.4.0
 date-released: 2026-11-20
 type: software
 license: MIT

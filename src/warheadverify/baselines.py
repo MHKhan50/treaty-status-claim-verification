@@ -16,7 +16,8 @@ def _pair(claims, evidence):
 
 def fit_predict(kind, train, val, test, ev_train=None, ev_val=None, ev_test=None, seed=0):
     """kind: majority | claim_lr | pair_lr | pair_mlp. Regularisation chosen on validation macro-F1."""
-    y = train["label"].to_numpy()
+    classes = np.array(sorted(train["label"].unique()))
+    y = np.searchsorted(classes, train["label"].to_numpy())  # integer targets (MLP early stopping needs numbers)
     if kind == "majority":
         major = train["label"].value_counts().idxmax()
         return np.array([major] * len(test)), {"label": major}
@@ -30,7 +31,7 @@ def fit_predict(kind, train, val, test, ev_train=None, ev_val=None, ev_test=None
         clf = (LogisticRegression(C=g, max_iter=3000, class_weight="balanced", random_state=seed) if kind != "pair_mlp"
                else MLPClassifier(hidden_layer_sizes=(256,), alpha=g, max_iter=60, early_stopping=True, random_state=seed))
         model = make_pipeline(TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, min_df=2), clf).fit(x_tr, y)
-        score = macro_f1(val["label"], model.predict(x_va))
+        score = macro_f1(val["label"], classes[model.predict(x_va)])
         if best is None or score > best[0]:
             best = (score, g, model)
-    return best[2].predict(x_te), {"param": best[1], "val_macro_f1": best[0]}
+    return classes[best[2].predict(x_te)], {"param": best[1], "val_macro_f1": best[0]}

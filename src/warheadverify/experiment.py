@@ -114,7 +114,7 @@ def run_gpu(data_dir, out_dir, seeds=(0, 1, 2), llm="Qwen/Qwen2.5-1.5B-Instruct"
     # Multi-agent pipeline on a stratified sample of the country-split test claims.
     te = claims[claims["split_country"] == "test"].copy()
     te["ce"] = np.array(LABELS)[probs_store["country"].argmax(1)]
-    sample = (te.groupby("label", group_keys=False).apply(lambda g: g.sample(min(len(g), llm_claims // 3), random_state=0)))
+    sample = pd.concat([g.sample(min(len(g), llm_claims // 3), random_state=0) for _, g in te.groupby("label")])
     text = dict(zip(hist["doc_id"], hist["text"]))
     recs = [[(d, text[d]) for d in ids.split(";")[:3]] for ids in sample["top_ids"]]
     verifier = LLMVerifier(llm)

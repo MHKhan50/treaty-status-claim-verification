@@ -17,7 +17,8 @@ def train_cross_encoder(train, val, test, ev_train, ev_val, ev_test, model_name=
     torch.manual_seed(seed); np.random.seed(seed)
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tok = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=len(LABELS)).to(dev)
+    # Recent transformers load weights in their stored dtype (fp16 for some checkpoints); train in fp32 with AMP.
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=len(LABELS)).float().to(dev)
     lab = {l: i for i, l in enumerate(LABELS)}
 
     def enc(df, ev):

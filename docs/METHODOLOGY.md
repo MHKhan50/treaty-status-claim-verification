@@ -1,146 +1,51 @@
 # Methodology
 
-## 1. Research question
+## Question
 
-Can a lightweight neural text classifier, combined with transparent
-evidence retrieval and explicit abstention, improve the triage of
-public arms-control claims?
+How well do lexical models, a fine-tuned cross-encoder, a zero-shot NLI model and a small LLM agent verify claims about
+nuclear arms-control treaty participation against official status records, and does a provenance check with an
+agreement rule make the agent's verdicts safer to use?
 
-## 2. Task definition
+## Records and documents
 
-Input:
-- A short arms-control claim.
-- Documentary passages potentially relevant to the claim.
+The four status tables (PTBT, NPT, CTBT, TPNW) give, for every country and year, one of *Not signed*, *Signed*,
+*Approved* (ratified, acceded or succeeded) and *Withdrawn*, following UNODA's actions as processed by Our World in Data.
+`histories` turns each country's series into status spans, and `document_text` writes them as one evidence document
+(for example `2000-2004: signed, not ratified. 2005-2025: ratified or acceded.`).
 
-Output:
-- `supported`
-- `contradicted`
-- `insufficient_evidence`
+## Claims and labels
 
-Labels describe the relationship between a claim and the supplied
-documentary evidence. They are not legal opinions, treaty-compliance
-determinations, or independent verification of geopolitical events.
+`make_claims` draws six claims per document with a fixed seed:
 
-## 3. System architecture
+| Kind | Example | Label |
+|---|---|---|
+| status | By 2002, Benin had ratified or acceded to the CTBT. | supported if the record shows that status in that year, else contradicted |
+| event | Benin became a party to the CTBT in 2010. | supported if that is the first year of the status, else contradicted (wrong years are shifted by 1–5) |
+| future | As of 2029, Benin had signed but not ratified the CTBT. | insufficient: the records end earlier |
+| day_precision | Chile ratified or acceded to the CTBT on 6 September 1999. | insufficient when the year is right: records are yearly |
+| uncovered_treaty | By 1995, Qatar had ratified or acceded to the Treaty of Bangkok. | insufficient: no record in the corpus |
 
-The benchmark includes three modelling components:
+Supported and contradicted claims share the same sentence forms, so wording alone cannot reveal the label; the
+claim-only baseline measures what remains (for example, base rates by treaty). A record-lookup parser reproduces every
+label (tested), which confirms the labels follow from the records.
 
-- **TF-IDF + Logistic Regression:** classical machine-learning baseline.
-- **TF-IDF + MLP:** lightweight neural classification baseline.
-- **Retrieval-assisted workflow:** cosine-similarity evidence ranking,
-  classifier predictions, and threshold-based abstention.
+## Splits
 
-Retrieval similarity is a ranking signal, not proof of semantic
-entailment or contradiction.
+- **Country-held-out:** countries are shuffled with a fixed seed and assigned 70/15/15 to train, validation and test.
+- **Treaty-held-out:** all TPNW claims are test; the other treaties' claims about training and validation countries are
+  used for training and validation (test-country claims about other treaties go to training).
 
-## 4. Dataset and provenance
+## Verifiers and agent
 
-The included `synthetic_demo.csv` dataset contains fictional claims
-and fictional documentary passages.
+See the README table. The cross-encoder reads the claim with the top TF-IDF record (as a deployed system would), is
+trained for up to three epochs and scored at the epoch with the best validation macro-F1. The multi-agent pipeline runs
+on a label-stratified sample of the country-held-out test claims: TF-IDF retrieval of three records, an LLM verifier
+that must answer in JSON and cite a record, a provenance auditor that turns any verdict whose cited record was not
+retrieved, does not match the claim's country and treaty, or does not cover the claim's year into
+*insufficient_evidence*, and an agreement rule that keeps the verdict only when the cross-encoder agrees.
 
-Each example has:
-- A unique `claim_id`.
-- A `document_id` identifying its source document.
-- A claim and its assigned label.
-- An evidence passage.
-- Source metadata.
-- A synthetic-data indicator.
+## Evaluation
 
-The fixture contains 18 examples across 12 unique document groups.
-
-It is intended exclusively for software testing and experimental
-pipeline validation. It does not represent real treaties, states,
-nuclear stockpiles, or arms-control events.
-
-## 5. Evaluation design
-
-### 5.1 Document-grouped cross-validation
-
-The experiment uses three-fold `GroupKFold` cross-validation.
-
-The grouping variable is `document_id`. All examples associated
-with one document remain in the same fold.
-
-This prevents claims from the same source document appearing in
-both training and test partitions within a fold.
-
-The implementation explicitly checks that the training and test
-document sets are disjoint. An experiment raises an error if
-document overlap is detected.
-
-### 5.2 Models and random seeds
-
-Two classifiers are evaluated:
-
-- Logistic Regression.
-- Multi-layer Perceptron (MLP).
-
-The experiment uses five random seeds:
-
-`11, 23, 37, 51, 79`
-
-Both models use the same document-grouped folds and seed list.
-
-With two models, five seeds, and three folds, the experiment
-produces 30 result records.
-
-### 5.3 Reported metrics
-
-The experiment reports:
-
-- Macro-F1.
-- Balanced accuracy.
-- Training and test example counts.
-- Training and test document counts.
-- Document overlap.
-
-For a substantive evaluation, additional reporting should include
-per-class precision and recall, confusion matrices, and probability
-calibration analysis.
-
-Retrieval should be evaluated separately using Recall@k and
-Mean Reciprocal Rank (MRR) when gold evidence identifiers are
-available.
-
-## 6. Synthetic experiment status
-
-The current experiment is a pipeline smoke test.
-
-The generated report is marked:
-
-`synthetic_demo_only`
-
-The observed scores must not be interpreted as real-world
-claim-verification performance, evidence quality, or model
-generalisation.
-
-The small number of fictional document groups also limits the
-statistical strength of cross-validation estimates.
-
-## 7. Limitations and future work
-
-A substantive research benchmark requires:
-
-1. A larger corpus of authentic public documents.
-2. Traceable source URLs and publication metadata.
-3. Expert-reviewed claim and evidence annotations.
-4. Document-level train, validation, and test separation.
-5. Gold evidence identifiers for retrieval evaluation.
-6. Per-class performance and calibration analysis.
-7. Repeated experiments and uncertainty estimates.
-8. Explicit evaluation of abstention and evidence sufficiency.
-
-Future work should investigate whether retrieval-assisted
-verification improves evidence-grounded claim triage over
-classification-only baselines.
-
-## 8. Research scope and responsible use
-
-The project is limited to public documentary analysis for
-arms-control and disarmament research.
-
-It does not provide weapon design, explosive performance,
-delivery-system, targeting, deployment, or tactical guidance.
-
-Outputs should be treated as research assistance requiring
-independent source verification and human review.
+Macro-F1 (primary), balanced accuracy and per-class F1; 95% percentile intervals from 1,000 bootstrap resamples of
+countries. Accuracy by claim kind, risk–coverage for the cross-encoder ensemble, Recall@1/3/5 and MRR for retrieval,
+audit counts, invalid LLM outputs, and the agreement rule's coverage and accuracy.

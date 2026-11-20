@@ -9,3 +9,6 @@ reports/*.json
 .DS_Store
 .ipynb_checkpoints/
 src/*.egg-info/
+data/raw/
+data/processed/
+reports/

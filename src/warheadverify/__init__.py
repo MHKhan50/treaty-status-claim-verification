@@ -1,1 +1,2 @@
-__version__ = "0.2.0"
+"""WarheadVerify-AgentBench: verification of public nuclear arms-control treaty-status claims."""
+__version__ = "0.3.0"

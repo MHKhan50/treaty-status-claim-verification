@@ -1,52 +1,42 @@
+"""Command line: download, build, cpu, gpu, summary."""
+from __future__ import annotations
+
 import argparse
 import json
-from pathlib import Path
-import pandas as pd
-from .data import load_dataset
-from .modeling import train_model, load_model, evaluate_model
-from .agent import VerificationAgent
 
-def build_parser():
-    parser = argparse.ArgumentParser(prog="warheadverify")
-    sub = parser.add_subparsers(dest="command", required=True)
-    train = sub.add_parser("train")
-    train.add_argument("--data", required=True)
-    train.add_argument("--model-dir", default="artifacts")
-    train.add_argument("--model-type", choices=["mlp", "logreg"], default="mlp")
-    train.add_argument("--seed", type=int, default=17)
-    evaluate = sub.add_parser("evaluate")
-    evaluate.add_argument("--data", required=True)
-    evaluate.add_argument("--model-dir", default="artifacts")
-    evaluate.add_argument("--model-type", choices=["mlp", "logreg"], default="mlp")
-    verify = sub.add_parser("verify")
-    verify.add_argument("--claim", required=True)
-    verify.add_argument("--evidence", required=True)
-    verify.add_argument("--model-dir", default="artifacts")
-    verify.add_argument("--model-type", choices=["mlp", "logreg"], default="mlp")
-    verify.add_argument("--top-k", type=int, default=1)
-    verify.add_argument("--output", default="")
-    return parser
 
-def main():
-    args = build_parser().parse_args()
-    if args.command == "train":
-        frame = load_dataset(args.data)
-        train_model(frame, args.model_dir, args.model_type, args.seed)
-        print(f"Trained {args.model_type} model on {len(frame)} examples.")
-        print(f"Saved model in: {args.model_dir}")
-    elif args.command == "evaluate":
-        frame = load_dataset(args.data)
-        model = load_model(args.model_dir, args.model_type)
-        print(json.dumps(evaluate_model(model, frame), indent=2))
-    elif args.command == "verify":
-        model = load_model(args.model_dir, args.model_type)
-        evidence_frame = pd.DataFrame({"evidence_text": [args.evidence]})
-        result = VerificationAgent(model, evidence_frame).verify(args.claim, args.top_k)
-        rendered = json.dumps(result, indent=2)
-        print(rendered)
-        if args.output:
-            Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-            Path(args.output).write_text(rendered + "\n", encoding="utf-8")
+def main(argv=None):
+    p = argparse.ArgumentParser(prog="warheadverify")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    for name in ("download", "build", "cpu", "gpu", "summary"):
+        s = sub.add_parser(name)
+        s.add_argument("--raw-dir", default="data/raw")
+        s.add_argument("--data-dir", default="data/processed")
+        s.add_argument("--out", default="reports")
+    sub.choices["gpu"].add_argument("--seeds", default="0,1,2")
+    sub.choices["gpu"].add_argument("--epochs", type=int, default=3)
+    sub.choices["gpu"].add_argument("--llm", default="Qwen/Qwen2.5-1.5B-Instruct")
+    sub.choices["gpu"].add_argument("--llm-claims", type=int, default=600)
+    sub.choices["cpu"].add_argument("--bootstrap", type=int, default=1000)
+    a = p.parse_args(argv)
+    if a.cmd == "download":
+        from .sources import download
+        print(json.dumps(download(a.raw_dir), indent=2))
+    elif a.cmd == "build":
+        from .experiment import build
+        print(json.dumps(build(a.raw_dir, a.data_dir), indent=2))
+    elif a.cmd == "cpu":
+        from .experiment import run_cpu
+        r = run_cpu(a.data_dir, a.out, a.bootstrap)
+        print(json.dumps({k: (v if k.startswith("retrieval") else {m: x.get("macro_f1") for m, x in v.items() if isinstance(x, dict)})
+                          for k, v in r.items()}, indent=2))
+    elif a.cmd == "gpu":
+        from .experiment import run_gpu
+        run_gpu(a.data_dir, a.out, tuple(int(s) for s in a.seeds.split(",")), a.llm, a.llm_claims, a.epochs)
+    elif a.cmd == "summary":
+        from .summary import write
+        print(write(a.out))
+
 
 if __name__ == "__main__":
     main()

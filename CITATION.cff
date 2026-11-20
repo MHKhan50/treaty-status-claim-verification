@@ -1,7 +1,15 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
-title: "WarheadVerify-AgentBench"
-version: 0.2.0
+message: "If you use this software, please cite it as below, and cite the UNODA Treaties Database and Our World in Data."
+title: "WarheadVerify-AgentBench: verification of public nuclear arms-control treaty-status claims"
+version: 0.3.0
 date-released: 2026-11-20
 type: software
-abstract: "A CPU-first benchmark for retrieval-assisted verification of public nuclear arms-control claims."
+license: MIT
+repository-code: "https://github.com/MHKhan50/warheadverify-agentbench"
+authors:
+  - family-names: Hussain
+    given-names: Muzammal
+    affiliation: "Independent researcher, Glasgow, United Kingdom"
+    orcid: "https://orcid.org/0009-0001-2570-5686"
+abstract: "A benchmark for verifying claims about nuclear arms-control treaty participation against yearly UNODA status records, with lexical baselines, a fine-tuned cross-encoder, zero-shot NLI and a multi-agent LLM pipeline with provenance checks and abstention."
+keywords: [fact verification, arms control, agentic AI, retrieval, natural language inference, abstention]

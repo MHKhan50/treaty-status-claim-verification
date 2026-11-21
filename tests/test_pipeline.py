@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from warheadverify.agents import LookupAgent, ProvenanceAuditor, combine, parse_claim, parse_json
-from warheadverify.corpus import LABELS, histories, make_claims, split_by_country, split_by_treaty
-from warheadverify.experiment import build, load, run_cpu
-from warheadverify.metrics import retrieval_metrics
-from warheadverify.sources import TREATIES, download, load_panel
+from treatyverify.agents import LookupAgent, ProvenanceAuditor, combine, parse_claim, parse_json
+from treatyverify.corpus import LABELS, histories, make_claims, split_by_country, split_by_treaty
+from treatyverify.experiment import build, load, run_cpu
+from treatyverify.metrics import retrieval_metrics
+from treatyverify.sources import TREATIES, download, load_panel
 
 COUNTRIES = ["Pakistan", "India", "Niger", "Nigeria", "Guinea", "Equatorial Guinea", "France", "Brazil", "Chile",
              "Kenya", "Ghana", "Peru", "Japan", "Norway", "Egypt", "Mexico", "Spain", "Italy", "Iran", "Iraq",

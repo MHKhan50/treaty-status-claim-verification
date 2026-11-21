@@ -1,5 +1,5 @@
 ---
-title: Nuclear Treaty Claim Check
+title: Treaty Claim Check
 emoji: 🕊️
 colorFrom: blue
 colorTo: yellow
@@ -7,10 +7,10 @@ sdk: static
 app_file: index.html
 pinned: false
 license: mit
-short_description: Check nuclear treaty claims against the UN record, by voice
+short_description: Check treaty-status claims against the UN record, by voice
 ---
 
-# Nuclear Treaty Claim Check
+# Treaty Claim Check
 
 Say or type a claim about the **NPT, CTBT, Partial Test-Ban Treaty or TPNW**, in English, Urdu (script or Roman) or Turkish, and get a verdict from the UN treaty record: supported, contradicted or cannot check, with the country's year-by-year status, the source and a world map with a timeline from 1963.
 
@@ -19,4 +19,4 @@ Say or type a claim about the **NPT, CTBT, Partial Test-Ban Treaty or TPNW**, in
 - Data: UNODA Treaties Database as published by Our World in Data (CC BY 4.0), downloaded live in the browser when the page opens; statuses are yearly. Map: Natural Earth.
 - Research tool, not legal advice.
 
-Code, tests and paper: [github.com/MHKhan50/warheadverify-agentbench](https://github.com/MHKhan50/warheadverify-agentbench)
+Code, tests and paper: [github.com/MHKhan50/treaty-status-claim-verification](https://github.com/MHKhan50/treaty-status-claim-verification)

@@ -3,7 +3,7 @@
 ## Question
 
 How well do lexical models, a fine-tuned cross-encoder, a zero-shot NLI model and a small LLM agent verify claims about
-nuclear arms-control treaty participation against official status records, and does a provenance check with an
+arms-control treaty participation against official status records, and does a provenance check with an
 agreement rule make the agent's verdicts safer to use?
 
 ## Records and documents

@@ -6,7 +6,7 @@ import json
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="warheadverify")
+    p = argparse.ArgumentParser(prog="treatyverify")
     sub = p.add_subparsers(dest="cmd", required=True)
     for name in ("download", "build", "cpu", "gpu", "summary"):
         s = sub.add_parser(name)

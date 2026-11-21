@@ -1,10 +1,10 @@
-# WarheadVerify-AgentBench
+# TreatyVerify: Treaty-Status Claim Verification
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24429803.svg)](https://doi.org/10.5281/zenodo.24429803) · [App](https://huggingface.co/spaces/MHkhan50/nuclear-treaty-claim-check)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24429803.svg)](https://doi.org/10.5281/zenodo.24429803) · [App](https://huggingface.co/spaces/MHkhan50/treaty-claim-check)
 
-**Verifying public nuclear arms-control claims against treaty-status records: lexical baselines, a fine-tuned cross-encoder, zero-shot NLI and a multi-agent LLM pipeline with provenance checks and abstention.**
+**Verifying public claims about arms-control treaty status against official records: lexical baselines, a fine-tuned cross-encoder, zero-shot NLI and a multi-agent LLM pipeline with provenance checks and abstention.**
 
-Version `0.4.0` · Python `3.10+`
+Version `0.4.1` · Python `3.10+`
 
 > **Scope.** Public treaty participation only (signature, ratification, accession, withdrawal). No information on weapons, materials, delivery, deployment or targeting. Labels describe whether the published records support a claim; they are not legal opinions or compliance findings.
 
@@ -36,9 +36,9 @@ Given a claim such as *"By 2005, Brazil had ratified or acceded to the Comprehen
 
 Metrics: macro-F1 with 95% intervals from 1,000 country-level bootstrap resamples, balanced accuracy, per-class F1, accuracy by claim type, risk–coverage of the cross-encoder, Recall@k and MRR for TF-IDF and e5-small retrieval, audit counts and the agreement rule's coverage and accuracy.
 
-## App: Nuclear Treaty Claim Check
+## App: Treaty Claim Check
 
-[**Open the app**](https://huggingface.co/spaces/MHkhan50/nuclear-treaty-claim-check): say or type a claim in English, Urdu or Turkish, for example *"Pakistan has signed the CTBT"* or *"Kya Iran NPT ka rukan hai?"*, and get a verdict from the treaty record with the year-by-year status, the source and a world map with a timeline from 1963. Paste a paragraph and every sentence that names a country and a treaty is checked.
+[**Open the app**](https://huggingface.co/spaces/MHkhan50/treaty-claim-check): say or type a claim in English, Urdu or Turkish, for example *"Pakistan has signed the CTBT"* or *"Kya Iran NPT ka rukan hai?"*, and get a verdict from the treaty record with the year-by-year status, the source and a world map with a timeline from 1963. Paste a paragraph and every sentence that names a country and a treaty is checked.
 
 The app follows the design this benchmark supports: language understanding only extracts *which country, which treaty, which action*; the verdict comes from the record. It runs in the browser (`space/index.html`), downloads the record live from Our World in Data, and needs no server. Parser and verdict tests: `node space/test_core.mjs`.
 
@@ -68,15 +68,15 @@ Reading these numbers: claims are generated from templates, so the lookup agent'
 ```bash
 pip install -e ".[dev]"            # CPU parts and tests
 pytest -q
-warheadverify download             # data/raw + manifest.json
-warheadverify build                # data/processed: documents.csv, claims.csv
-warheadverify cpu                  # retrieval, lexical baselines, lookup agent
+treatyverify download             # data/raw + manifest.json
+treatyverify build                # data/processed: documents.csv, claims.csv
+treatyverify cpu                  # retrieval, lexical baselines, lookup agent
 pip install -e ".[gpu]"
-warheadverify gpu                  # cross-encoder (3 seeds), zero-shot NLI, dense retrieval, LLM agent pipeline
-warheadverify summary              # reports/results.md
+treatyverify gpu                  # cross-encoder (3 seeds), zero-shot NLI, dense retrieval, LLM agent pipeline
+treatyverify summary              # reports/results.md
 ```
 
-On Kaggle: import `notebooks/kaggle_warheadverify.ipynb` from this repository (GPU T4, Internet on) and run all; about 1 hour.
+On Kaggle: import `notebooks/kaggle_treatyverify.ipynb` from this repository (GPU T4, Internet on) and run all; about 1 hour.
 
 ## Limitations
 
@@ -87,9 +87,9 @@ On Kaggle: import `notebooks/kaggle_warheadverify.ipynb` from this repository (G
 ## Citation
 
 ```bibtex
-@software{hussain2026warheadverify,
+@software{hussain2026treatyverify,
   author    = {Hussain, Muzammal},
-  title     = {{WarheadVerify-AgentBench}: verification of public nuclear arms-control treaty-status claims},
+  title     = {{TreatyVerify}: verification of public arms-control treaty-status claims},
   year      = {2026},
   version   = {0.4.0},
   publisher = {Zenodo},

@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "warheadverify-agentbench"
-version = "0.4.0"
-description = "Verification of public nuclear arms-control treaty-status claims: corpus, baselines, cross-encoder and LLM agent"
+name = "treaty-status-claim-verification"
+version = "0.4.1"
+description = "Verification of public arms-control treaty-status claims: corpus, baselines, cross-encoder and LLM agent"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.23,<3", "pandas>=1.5,<3", "scikit-learn>=1.2,<2"]
@@ -15,7 +15,7 @@ dev = ["pytest>=7.0", "ruff>=0.4"]
 gpu = ["torch>=2.3", "transformers>=4.44", "sentence-transformers>=3.0", "sentencepiece>=0.2", "accelerate>=0.33"]
 
 [project.scripts]
-warheadverify = "warheadverify.cli:main"
+treatyverify = "treatyverify.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from huggingface_hub import HfApi
 
-repo_id = sys.argv[1] if len(sys.argv) > 1 else "MHkhan50/nuclear-treaty-claim-check"
+repo_id = sys.argv[1] if len(sys.argv) > 1 else "MHkhan50/treaty-claim-check"
 folder = Path(__file__).resolve().parents[1] / "space"
 api = HfApi()
 api.create_repo(repo_id, repo_type="space", space_sdk="static", exist_ok=True)

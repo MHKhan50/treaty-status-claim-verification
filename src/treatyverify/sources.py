@@ -35,7 +35,7 @@ def download(raw_dir: str | Path, retries: int = 5) -> dict:
         url = OWID.format(slug=info["slug"])
         path = raw / f"{key}.csv"
         if not path.exists():
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (warheadverify-agentbench)"})
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (treaty-status-claim-verification)"})
             for attempt in range(retries):
                 try:
                     with urllib.request.urlopen(req) as resp:

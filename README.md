@@ -1,5 +1,7 @@
 # WarheadVerify-AgentBench
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24429803.svg)](https://doi.org/10.5281/zenodo.24429803) · [App](https://huggingface.co/spaces/MHkhan50/nuclear-treaty-claim-check)
+
 **Verifying public nuclear arms-control claims against treaty-status records: lexical baselines, a fine-tuned cross-encoder, zero-shot NLI and a multi-agent LLM pipeline with provenance checks and abstention.**
 
 Version `0.4.0` · Python `3.10+`
@@ -84,4 +86,16 @@ On Kaggle: import `notebooks/kaggle_warheadverify.ipynb` from this repository (G
 
 ## Citation
 
-See `CITATION.cff`. Please also cite the UNODA Treaties Database and Our World in Data.
+```bibtex
+@software{hussain2026warheadverify,
+  author    = {Hussain, Muzammal},
+  title     = {{WarheadVerify-AgentBench}: verification of public nuclear arms-control treaty-status claims},
+  year      = {2026},
+  version   = {0.4.0},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.24429804},
+  url       = {https://doi.org/10.5281/zenodo.24429804}
+}
+```
+
+Please also cite the UNODA Treaties Database and Our World in Data.

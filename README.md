@@ -59,7 +59,7 @@ Macro-F1 on the test sets with 95% country-level bootstrap intervals. Corpus: 78
 
 Retrieval Recall@1: TF-IDF 0.838, e5-small 0.944.
 
-Agent pipeline on 600 country-held-out test claims: the LLM verifier (Qwen2.5-1.5B-Instruct) scores 0.400 [0.351, 0.449]; after the provenance audit 0.167, because 548 of 600 answers cited a record that was not retrieved or did not match. The cross-encoder scores 0.907 on the same claims; requiring the LLM and the cross-encoder to agree keeps 33% of claims at accuracy 1.000.
+Agent pipeline on 600 country-held-out test claims: the LLM verifier (Qwen2.5-1.5B-Instruct) scores 0.400 [0.351, 0.449]; after the provenance audit 0.167, because 548 of 600 answers cited a record that was not retrieved or did not match. *Note (26 November 2026): some models copy the brackets of the record id shown in the prompt (`[NPT:PAK]`), which the audit used to count as an uncited record. Record ids are now stripped of brackets before the audit; this run will be rescored from its saved traces.* The cross-encoder scores 0.907 on the same claims; requiring the LLM and the cross-encoder to agree keeps 33% of claims at accuracy 1.000.
 
 Reading these numbers: claims are generated from templates, so the lookup agent's 1.000 shows that a parser plus the record solves this version of the task, not that the problem is solved; the treaty-held-out cross-encoder varies strongly across seeds (SD 0.139). Version 1.0 adds real-world claims and larger models.
 

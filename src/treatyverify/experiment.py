@@ -205,9 +205,11 @@ def run_local(data_dir, out_dir, models, llm_claims=600, n_boot=1000, host="http
     for line in runs_path.read_text().splitlines():
         try:
             r = json.loads(line)
-            runs[(r["model"], r["claim_id"])] = r
-        except (ValueError, KeyError):
+        except ValueError:
             continue
+        if "model" in r and "claim_id" in r and (r["model"], r["claim_id"]) not in runs:  # first reply counts
+            # same record-id clean-up as parse_json, so old runs are rescored without calling a model again
+            runs[(r["model"], r["claim_id"])] = {**r, "doc_id": str(r.get("doc_id", "")).strip().strip("[]").strip()}
     from .agents import ProvenanceAuditor
     auditor = ProvenanceAuditor(hist)
     res = {"claims": int(len(sample)), "second_verifier": "country_pair_mlp",

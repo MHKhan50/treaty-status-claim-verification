@@ -117,3 +117,8 @@ def test_local_llm_pipeline_resumes(raw, tmp_path):
     run_local(tmp_path / "proc", tmp_path / "reports", ["fake:1b"], llm_claims=30, n_boot=20, ask=ask, meta=meta)
     assert len(calls) == n  # finished claims are skipped on a second run
     assert (tmp_path / "reports" / "local_llm_predictions.csv").exists()
+
+
+def test_parse_json_strips_record_brackets():
+    v = parse_json('{"label": "supported", "doc_id": "[NPT:PAK]", "reason": "x"}')
+    assert v["doc_id"] == "NPT:PAK" and v["label"] == "supported"

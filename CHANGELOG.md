@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `treatyverify local`: the agent pipeline with local models through Ollama (temperature 0, seed 42), on the same 600 country-held-out test claims as the GPU run; resumable, with model digests recorded.
+- Fix: record ids cited as `[NPT:PAK]` (with the brackets shown in the prompt) are now read as `NPT:PAK`, so the provenance audit no longer counts them as uncited. Stored local runs are rescored without calling a model.
 
 ## 0.4.1 — 2026-11-21
 

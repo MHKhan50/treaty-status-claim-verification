@@ -94,7 +94,9 @@ def parse_json(text: str) -> dict:
     label = str(d.get("label", "")).strip().lower()
     if label not in ("supported", "contradicted", "insufficient_evidence"):
         label = "invalid"
-    return {"label": label, "doc_id": str(d.get("doc_id", "")).strip(), "reason": str(d.get("reason", ""))[:200]}
+    # Records are shown to the model as "[NPT:PAK] text"; some models copy the brackets into doc_id.
+    doc_id = str(d.get("doc_id", "")).strip().strip("[]").strip()
+    return {"label": label, "doc_id": doc_id, "reason": str(d.get("reason", ""))[:200]}
 
 
 class LLMVerifier:

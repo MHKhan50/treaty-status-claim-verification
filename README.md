@@ -78,6 +78,12 @@ treatyverify summary              # reports/results.md
 
 On Kaggle: import `notebooks/kaggle_treatyverify.ipynb` from this repository (GPU T4, Internet on) and run all; about 1 hour.
 
+**Larger local models (Mac, Ollama).** The agent pipeline can also run with local models through [Ollama](https://ollama.com), on the same 600 test claims as the GPU run. It needs the CPU step first; replies are appended to `reports/local_llm_runs.jsonl` as they arrive and finished claims are skipped, so the run can be stopped and restarted. Because the cross-encoder needs a GPU, the second verifier for the agreement rule here is the claim + record TF-IDF MLP.
+
+```bash
+treatyverify local --models qwen2.5:3b llama3.2:3b mistral:7b qwen2.5:7b llama3.1:8b
+```
+
 ## Limitations
 
 - Claims are generated from templates; real-world claims are more varied. The benchmark isolates reading and reasoning over records.

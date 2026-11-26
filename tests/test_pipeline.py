@@ -96,3 +96,24 @@ def test_end_to_end_cpu(raw, tmp_path):
 def test_retrieval_metrics():
     m = retrieval_metrics(["a", "b", ""], [["a", "x"], ["x", "b"], ["y"]])
     assert m["recall@1"] == 0.5 and m["mrr"] == 0.75 and m["n"] == 2
+
+
+def test_local_llm_pipeline_resumes(raw, tmp_path):
+    from treatyverify.experiment import run_local
+    build(raw, tmp_path / "proc")
+    run_cpu(tmp_path / "proc", tmp_path / "reports", n_boot=20)
+    calls = []
+
+    def ask(prompt):
+        calls.append(prompt)
+        first_id = prompt.split("[", 2)[1].split("]")[0]
+        return json.dumps({"label": "supported", "doc_id": first_id, "reason": "fake"})
+
+    meta = {"ollama_version": "test", "models": {"fake:1b": "x"}}
+    res = run_local(tmp_path / "proc", tmp_path / "reports", ["fake:1b"], llm_claims=30, n_boot=20, ask=ask, meta=meta)
+    n = res["claims"]
+    assert len(calls) == n and res["models"]["fake:1b"]["invalid_outputs"] == 0
+    assert 0 <= res["models"]["fake:1b"]["agreement_coverage"] <= 1
+    run_local(tmp_path / "proc", tmp_path / "reports", ["fake:1b"], llm_claims=30, n_boot=20, ask=ask, meta=meta)
+    assert len(calls) == n  # finished claims are skipped on a second run
+    assert (tmp_path / "reports" / "local_llm_predictions.csv").exists()

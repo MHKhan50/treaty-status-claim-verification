@@ -123,6 +123,30 @@ class LLMVerifier:
         return out
 
 
+class OllamaVerifier:
+    """Same prompt and JSON output as ``LLMVerifier``, through a local Ollama server (temperature 0, seed 42).
+
+    ``ask`` can be replaced by any function (messages -> text), which the tests use instead of a server.
+    """
+
+    def __init__(self, model, host="http://localhost:11434", ask=None, timeout=300):
+        self.model, self.host, self.timeout = model, host.rstrip("/"), timeout
+        self.ask = ask or self._ask
+
+    def _ask(self, prompt: str) -> str:
+        import urllib.request
+        body = json.dumps({"model": self.model, "stream": False, "format": "json",
+                           "messages": [{"role": "user", "content": prompt}],
+                           "options": {"temperature": 0, "seed": 42, "num_predict": 128}}).encode()
+        req = urllib.request.Request(self.host + "/api/chat", data=body, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            return json.loads(r.read())["message"]["content"]
+
+    def verify(self, claim: str, records) -> dict:
+        text = self.ask(PROMPT.format(records="\n".join(f"[{d}] {t}" for d, t in records), claim=claim))
+        return {**parse_json(text), "raw": text[:400]}
+
+
 class ProvenanceAuditor:
     def __init__(self, hist):
         self.by_id = {r.doc_id: r for r in hist.itertuples()}

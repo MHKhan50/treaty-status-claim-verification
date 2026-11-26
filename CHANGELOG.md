@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `treatyverify local`: the agent pipeline with local models through Ollama (temperature 0, seed 42), on the same 600 country-held-out test claims as the GPU run; resumable, with model digests recorded.
+
 ## 0.4.1 — 2026-11-21
 
 - Renamed from WarheadVerify-AgentBench to **TreatyVerify** (repository `treaty-status-claim-verification`, package and command `treatyverify`, app *Treaty Claim Check*) so that the name describes what the project does: checking public claims against public treaty-status records. Code, data and results are unchanged. Version 0.4.0 is archived as doi:10.5281/zenodo.24429804.

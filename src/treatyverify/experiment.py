@@ -141,3 +141,98 @@ def run_gpu(data_dir, out_dir, seeds=(0, 1, 2), llm="Qwen/Qwen2.5-1.5B-Instruct"
     (out / "agent_traces.jsonl").write_text("\n".join(json.dumps({"claim_id": i, **v}) for i, v in zip(sample["claim_id"], audited)))
     (out / "results_gpu.json").write_text(json.dumps(res, indent=2))
     return res
+
+
+def agent_sample(claims, llm_claims=600):
+    """The stratified sample of country-held-out test claims used by the GPU agent pipeline (same seed)."""
+    te = claims[claims["split_country"] == "test"].copy()
+    return pd.concat([g.sample(min(len(g), llm_claims // 3), random_state=0) for _, g in te.groupby("label")])
+
+
+def ollama_info(host, models) -> dict:
+    """Ollama version and model digests, so the run can be identified later."""
+    import urllib.request
+    tags = json.loads(urllib.request.urlopen(host.rstrip("/") + "/api/tags", timeout=10).read()).get("models", [])
+    digests = {t["name"]: t.get("digest", "") for t in tags}
+    missing = [m for m in models if m not in digests]
+    if missing:
+        raise SystemExit("Pull these models first: " + "; ".join("ollama pull " + m for m in missing))
+    version = json.loads(urllib.request.urlopen(host.rstrip("/") + "/api/version", timeout=10).read()).get("version", "")
+    return {"ollama_version": version, "models": {m: digests[m] for m in models}}
+
+
+def run_local(data_dir, out_dir, models, llm_claims=600, n_boot=1000, host="http://localhost:11434", ask=None,
+              meta=None) -> dict:
+    """Agent pipeline with local models through Ollama, on the same 600 claims as the GPU run.
+
+    Needs ``treatyverify cpu`` first (claims_with_retrieval.csv, predictions_cpu.csv). Every reply is appended to
+    local_llm_runs.jsonl at once and finished (model, claim) pairs are skipped, so the run can be stopped and
+    restarted. The second verifier for the agreement rule is the claim + record TF-IDF MLP from the CPU run, because
+    the cross-encoder needs a GPU.
+    """
+    from .agents import OllamaVerifier
+    hist, _ = load(data_dir)
+    out = Path(out_dir)
+    claims = pd.read_csv(out / "claims_with_retrieval.csv", keep_default_na=False)
+    cpu = pd.read_csv(out / "predictions_cpu.csv", keep_default_na=False).set_index("claim_id")
+    sample = agent_sample(claims, llm_claims)
+    sample["mlp"] = cpu.loc[sample["claim_id"], "country_pair_mlp"].values
+    text = dict(zip(hist["doc_id"], hist["text"]))
+    recs = {cid: [(d, text[d]) for d in ids.split(";")[:3]] for cid, ids in zip(sample["claim_id"], sample["top_ids"])}
+    runs_path = out / "local_llm_runs.jsonl"
+    done = set()
+    if runs_path.exists():
+        for line in runs_path.read_text().splitlines():
+            try:
+                r = json.loads(line)
+                done.add((r["model"], r["claim_id"]))
+            except (ValueError, KeyError):
+                continue
+    if meta is None and ask is None:
+        meta = ollama_info(host, models)
+    if meta is not None:
+        (out / "local_llm_metadata.json").write_text(json.dumps({**meta, "claims": int(len(sample)), "temperature": 0,
+                                                                 "seed": 42, "num_predict": 128}, indent=2))
+    todo = [(m, cid, c) for m in models for cid, c in zip(sample["claim_id"], sample["claim"]) if (m, cid) not in done]
+    with runs_path.open("a", encoding="utf-8") as f:
+        for i, (m, cid, c) in enumerate(todo, 1):
+            v = OllamaVerifier(m, host, ask).verify(c, recs[cid])
+            f.write(json.dumps({"model": m, "claim_id": cid, **v}) + "\n")
+            f.flush()
+            if i % 25 == 0 or i == len(todo):
+                print("[{}/{}] {}".format(i, len(todo), m), flush=True)
+    runs = {}
+    for line in runs_path.read_text().splitlines():
+        try:
+            r = json.loads(line)
+            runs[(r["model"], r["claim_id"])] = r
+        except (ValueError, KeyError):
+            continue
+    from .agents import ProvenanceAuditor
+    auditor = ProvenanceAuditor(hist)
+    res = {"claims": int(len(sample)), "second_verifier": "country_pair_mlp",
+           "mlp_same_claims": report(sample["label"], sample["mlp"], sample["code"], n_boot),
+           "lookup_same_claims": report(sample["label"], sample["lookup"], sample["code"], n_boot), "models": {}}
+    rows = []
+    for m in models:
+        raw = [runs[(m, cid)] for cid in sample["claim_id"]]
+        audited = [auditor.audit(c, v, [d for d, _ in recs[cid]]) for c, v, cid in zip(sample["claim"], raw, sample["claim_id"])]
+        s = sample[["claim_id", "label", "code", "kind", "mlp"]].copy()
+        s["model"] = m
+        s["llm_raw"] = [v["label"] for v in raw]
+        s["llm_audited"] = [v["label"] for v in audited]
+        s["audit"] = [v["audit"] for v in audited]
+        s["final"] = combine(s["llm_audited"], s["mlp"])
+        kept = s[s["final"] != "refer"]
+        res["models"][m] = {
+            "llm_raw": report(s["label"], s["llm_raw"].replace("invalid", "insufficient_evidence"), s["code"], n_boot),
+            "llm_audited": report(s["label"], s["llm_audited"], s["code"], n_boot),
+            "audit_counts": s["audit"].value_counts().to_dict(),
+            "invalid_outputs": int((s["llm_raw"] == "invalid").sum()),
+            "raw_accuracy_by_kind": s.assign(ok=s["llm_raw"] == s["label"]).groupby("kind")["ok"].mean().round(4).to_dict(),
+            "agreement_coverage": float(len(kept) / len(s)),
+            "agreement_accuracy": float((kept["final"] == kept["label"]).mean()) if len(kept) else None}
+        rows.append(s)
+    pd.concat(rows).to_csv(out / "local_llm_predictions.csv", index=False)
+    (out / "results_local_llm.json").write_text(json.dumps(res, indent=2))
+    return res

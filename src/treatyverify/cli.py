@@ -1,4 +1,4 @@
-"""Command line: download, build, cpu, gpu, summary."""
+"""Command line: download, build, cpu, gpu, local, summary."""
 from __future__ import annotations
 
 import argparse
@@ -8,7 +8,7 @@ import json
 def main(argv=None):
     p = argparse.ArgumentParser(prog="treatyverify")
     sub = p.add_subparsers(dest="cmd", required=True)
-    for name in ("download", "build", "cpu", "gpu", "summary"):
+    for name in ("download", "build", "cpu", "gpu", "local", "summary"):
         s = sub.add_parser(name)
         s.add_argument("--raw-dir", default="data/raw")
         s.add_argument("--data-dir", default="data/processed")
@@ -18,6 +18,10 @@ def main(argv=None):
     sub.choices["gpu"].add_argument("--llm", default="Qwen/Qwen2.5-1.5B-Instruct")
     sub.choices["gpu"].add_argument("--llm-claims", type=int, default=600)
     sub.choices["cpu"].add_argument("--bootstrap", type=int, default=1000)
+    sub.choices["local"].add_argument("--models", nargs="+",
+                                      default=["qwen2.5:3b", "llama3.2:3b", "mistral:7b", "qwen2.5:7b", "llama3.1:8b"])
+    sub.choices["local"].add_argument("--llm-claims", type=int, default=600)
+    sub.choices["local"].add_argument("--host", default="http://localhost:11434")
     a = p.parse_args(argv)
     if a.cmd == "download":
         from .sources import download
@@ -33,6 +37,12 @@ def main(argv=None):
     elif a.cmd == "gpu":
         from .experiment import run_gpu
         run_gpu(a.data_dir, a.out, tuple(int(s) for s in a.seeds.split(",")), a.llm, a.llm_claims, a.epochs)
+    elif a.cmd == "local":
+        from .experiment import run_local
+        r = run_local(a.data_dir, a.out, a.models, a.llm_claims, host=a.host)
+        print(json.dumps({m: {"raw_f1": v["llm_raw"]["macro_f1"], "audited_f1": v["llm_audited"]["macro_f1"],
+                              "invalid": v["invalid_outputs"], "agree_cov": round(v["agreement_coverage"], 3),
+                              "agree_acc": v["agreement_accuracy"]} for m, v in r["models"].items()}, indent=2))
     elif a.cmd == "summary":
         from .summary import write
         print(write(a.out))
